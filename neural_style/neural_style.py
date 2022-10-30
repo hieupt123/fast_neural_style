@@ -78,12 +78,12 @@ def train(args):
 
             x = x.to(device)
             y = transformer(x)
-            with torch.no_grad():
-                transformer.eval().cpu()
-                for img in y:
-                    utils.save_image(f'transform/{i}.jpg', img.to('cpu'))
-                    i+=1
-            transformer.to(device).train()
+            # with torch.no_grad():
+            #     transformer.eval().cpu()
+            #     for img in y:
+            #         utils.save_image(f'transform/{i}.jpg', img.to('cpu'))
+            #         i+=1
+            # transformer.to(device).train()
 
             y = utils.normalize_batch(y)
             x = utils.normalize_batch(x)
