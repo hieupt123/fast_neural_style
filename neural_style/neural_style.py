@@ -78,7 +78,7 @@ def train(args):
 
             x = x.to(device)
             y = transformer(x)
-            y = y.to(deviceS)
+            y = y.to(device)
             # with torch.no_grad():
             #     transformer.eval().cpu()
             #     for img in y:
