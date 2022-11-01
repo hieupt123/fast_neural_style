@@ -77,8 +77,8 @@ def train(args):
     gram_style = [utils.gram_matrix(y) for y in features_style]
 
     if args.load_model:
-        model, optimizer, current_epoch, start_batch_idx = load_checkpoitn(model, optimizer,
-                                                                        torch.load(args.path_checkpoint))
+        transformer, optimizer, current_epoch, start_batch_idx = load_checkpoitn(transformer, optimizer,
+                                                                        torch.load(args.path_checkpoint_load))
     else:
         current_epoch = 0
         start_batch_idx = 0
@@ -139,7 +139,7 @@ def train(args):
                 transformer.eval().cpu()
                 ckpt_model_filename = "ckpt_epoch_" + str(e) + "_batch_id_" + str(batch_id + 1) + ".pth.tar"
                 ckpt_model_path = os.path.join(args.checkpoint_model_dir, ckpt_model_filename)
-                checkpoint = {'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict(),
+                checkpoint = {'state_dict': transformer.state_dict(), 'optimizer': optimizer.state_dict(),
                               'current_epoch': epoch, 'start_batch_idx': batch_idx + 1}
                 save_checkpoint(checkpoint, ckpt_model_path)
                 transformer.to(device).train()
@@ -232,11 +232,11 @@ def main():
                                   help="path to style-image")
     train_arg_parser.add_argument("--save-model-dir", type=str, required=True,
                                   help="path to folder where trained model will be saved.")
+    train_arg_parser.add_argument("--load-model", type=str, required=True, default=False,
+                                  help="load checkpoints de tiep tuc training hay khong")
     train_arg_parser.add_argument("--checkpoint-model-dir", type=str, default=None,
                                   help="path to folder where checkpoints of trained models will be saved")
-    train_arg_parser.add_argument("--load-model", type=str, required=True,
-                                  help="load checkpoints de tiep tuc training hay khong")
-    train_arg_parser.add_argument("--path-checkpoint", type=str, default=None,
+    train_arg_parser.add_argument("--path-checkpoint-load", type=str, default=None,
                                   help="file checkpoint de load")
     train_arg_parser.add_argument("--image-size", type=int, default=256,
                                   help="size of training images, default is 256 X 256")
