@@ -30,6 +30,17 @@ def check_paths(args):
         print(e)
         sys.exit(1)
 
+def save_checkpoint(state, filename='my_checkpoint.pth.tar'):
+    print("=> Saving checkpoint")
+    torch.save(state, filename)
+
+def load_checkpoitn(model, optimizer, checkpoint):
+    print("=> Loading checkpoint")
+    model.load_state_dict(checkpoint['state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    current_epoch = checkpoint['current_epoch']
+    start_batch_idx = checkpoint['start_batch_idx']
+    return model, optimizer, current_epoch, start_batch_idx
 
 def train(args):
     if args.cuda:
@@ -64,14 +75,22 @@ def train(args):
 
     features_style = vgg(utils.normalize_batch(style))
     gram_style = [utils.gram_matrix(y) for y in features_style]
+
+    if args.load_model:
+        model, optimizer, current_epoch, start_batch_idx = load_checkpoitn(model, optimizer,
+                                                                        torch.load(args.path_checkpoint))
+    else:
+        current_epoch = 0
+        start_batch_idx = 0
 ##################
-    i = 0
-    for e in range(args.epochs):
+    for e in range(current_epoch, args.epochs):
         transformer.train()
         agg_content_loss = 0.
         agg_style_loss = 0.
         count = 0
         for batch_id, (x, _) in enumerate(train_loader):
+            if epoch == current_epoch and batch_idx < start_batch_idx:
+                continue;
             n_batch = len(x)
             count += n_batch
             optimizer.zero_grad()
@@ -118,9 +137,11 @@ def train(args):
 
             if args.checkpoint_model_dir is not None and (batch_id + 1) % args.checkpoint_interval == 0:
                 transformer.eval().cpu()
-                ckpt_model_filename = "ckpt_epoch_" + str(e) + "_batch_id_" + str(batch_id + 1) + ".pth"
+                ckpt_model_filename = "ckpt_epoch_" + str(e) + "_batch_id_" + str(batch_id + 1) + ".pth.tar"
                 ckpt_model_path = os.path.join(args.checkpoint_model_dir, ckpt_model_filename)
-                torch.save(transformer.state_dict(), ckpt_model_path)
+                checkpoint = {'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict(),
+                              'current_epoch': epoch, 'start_batch_idx': batch_idx + 1}
+                save_checkpoint(checkpoint, ckpt_model_path)
                 transformer.to(device).train()
 
     # save model
@@ -213,6 +234,10 @@ def main():
                                   help="path to folder where trained model will be saved.")
     train_arg_parser.add_argument("--checkpoint-model-dir", type=str, default=None,
                                   help="path to folder where checkpoints of trained models will be saved")
+    train_arg_parser.add_argument("--load-model", type=str, required=True,
+                                  help="load checkpoints de tiep tuc training hay khong")
+    train_arg_parser.add_argument("--path-checkpoint", type=str, default=None,
+                                  help="file checkpoint de load")
     train_arg_parser.add_argument("--image-size", type=int, default=256,
                                   help="size of training images, default is 256 X 256")
     train_arg_parser.add_argument("--style-size", type=int, default=None,
