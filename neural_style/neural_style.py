@@ -232,7 +232,7 @@ def main():
                                   help="path to style-image")
     train_arg_parser.add_argument("--save-model-dir", type=str, required=True,
                                   help="path to folder where trained model will be saved.")
-    train_arg_parser.add_argument("--load-model", type=str, required=True, default=False,
+    train_arg_parser.add_argument("--load-model", type=int, required=True, default=0,
                                   help="load checkpoints de tiep tuc training hay khong")
     train_arg_parser.add_argument("--checkpoint-model-dir", type=str, default=None,
                                   help="path to folder where checkpoints of trained models will be saved")
