@@ -10,7 +10,7 @@ class Vgg16(torch.nn.Module):
         vgg_pretrained_features = models.vgg16(pretrained=True).features
         self.maxPool = [4, 9, 18, 27, 36]
         for i in self.maxPool:
-            self.vgg_pretrained_features[i] = nn.AvgPool2d(kernel_size=2, stride=2, padding=0)
+            vgg_pretrained_features[i] = nn.AvgPool2d(kernel_size=2, stride=2, padding=0)
 
         self.slice1 = torch.nn.Sequential()
         self.slice2 = torch.nn.Sequential()
