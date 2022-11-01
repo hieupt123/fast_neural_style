@@ -88,7 +88,7 @@ def train(args):
         agg_content_loss = 0.
         agg_style_loss = 0.
         count = 0
-        for batch_id, (x, _) in enumerate(train_loader):
+        for batch_idx, (x, _) in enumerate(train_loader):
             if epoch == current_epoch and batch_idx < start_batch_idx:
                 continue;
             n_batch = len(x)
@@ -126,18 +126,18 @@ def train(args):
             agg_content_loss += content_loss.item()
             agg_style_loss += style_loss.item()
 
-            if (batch_id + 1) % args.log_interval == 0:
+            if (batch_idx + 1) % args.log_interval == 0:
                 mesg = "{}\tEpoch {}:\t[{}/{}]\tcontent: {:.6f}\tstyle: {:.6f}\ttotal: {:.6f}".format(
                     time.ctime(), epoch + 1, count, len(train_dataset),
-                                  agg_content_loss / (batch_id + 1),
-                                  agg_style_loss / (batch_id + 1),
-                                  (agg_content_loss + agg_style_loss) / (batch_id + 1)
+                                  agg_content_loss / (batch_idx + 1),
+                                  agg_style_loss / (batch_idx + 1),
+                                  (agg_content_loss + agg_style_loss) / (batch_idx + 1)
                 )
                 print(mesg)
 
-            if args.checkpoint_model_dir is not None and (batch_id + 1) % args.checkpoint_interval == 0:
+            if args.checkpoint_model_dir is not None and (batch_idx + 1) % args.checkpoint_interval == 0:
                 transformer.eval().cpu()
-                ckpt_model_filename = "ckpt_epoch_" + str(epoch) + "_batch_id_" + str(batch_id + 1) + ".pth.tar"
+                ckpt_model_filename = "ckpt_epoch_" + str(epoch) + "_batch_id_" + str(batch_idx + 1) + ".pth.tar"
                 ckpt_model_path = os.path.join(args.checkpoint_model_dir, ckpt_model_filename)
                 checkpoint = {'state_dict': transformer.state_dict(), 'optimizer': optimizer.state_dict(),
                               'current_epoch': epoch, 'start_batch_idx': batch_idx + 1}
