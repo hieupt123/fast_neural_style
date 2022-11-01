@@ -90,6 +90,8 @@ def train(args):
         count = 0
         for batch_idx, (x, _) in enumerate(train_loader):
             if epoch == current_epoch and batch_idx < start_batch_idx:
+                n_batch = len(x)
+                count += n_batch
                 continue;
             n_batch = len(x)
             count += n_batch
