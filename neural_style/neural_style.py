@@ -34,22 +34,23 @@ def save_checkpoint(state, filename='my_checkpoint.pth.tar'):
     print("=> Saving checkpoint")
     torch.save(state, filename)
 
-# def load_checkpoitn(model, optimizer, checkpoint):
-#     print("=> Loading checkpoint")
-#     model.load_state_dict(checkpoint['state_dict'])
-#     optimizer.load_state_dict(checkpoint['optimizer'])
-#     current_epoch = checkpoint['current_epoch']
-#     start_batch_idx = checkpoint['start_batch_idx']
-#     content_loss= checkpoint['agg_content_loss']
-#     style_loss= checkpoint['agg_style_loss']
-#     return model, optimizer, current_epoch, start_batch_idx, content_loss, style_loss
 def load_checkpoitn(model, optimizer, checkpoint):
     print("=> Loading checkpoint")
     model.load_state_dict(checkpoint['state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     current_epoch = checkpoint['current_epoch']
     start_batch_idx = checkpoint['start_batch_idx']
-    return model, optimizer, current_epoch, start_batch_idx
+    content_loss= checkpoint['agg_content_loss']
+    style_loss= checkpoint['agg_style_loss']
+    return model, optimizer, current_epoch, start_batch_idx, content_loss, style_loss
+
+# def load_checkpoitn(model, optimizer, checkpoint):
+#     print("=> Loading checkpoint")
+#     model.load_state_dict(checkpoint['state_dict'])
+#     optimizer.load_state_dict(checkpoint['optimizer'])
+#     current_epoch = checkpoint['current_epoch']
+#     start_batch_idx = checkpoint['start_batch_idx']
+#     return model, optimizer, current_epoch, start_batch_idx
 
 def train(args):
     if args.cuda:
@@ -86,25 +87,28 @@ def train(args):
     gram_style = [utils.gram_matrix(y) for y in features_style]
 
     if args.load_model:
-        # transformer, optimizer, current_epoch, start_batch_idx, content_loss, style_loss = load_checkpoitn(transformer, optimizer,
-        #                                                                 torch.load(args.path_checkpoint_load))
-        transformer, optimizer, current_epoch, start_batch_idx = load_checkpoitn(transformer,optimizer,
-                                                                          torch.load(args.path_checkpoint_load))
+        transformer, optimizer, current_epoch, start_batch_idx, content_loss, style_loss = load_checkpoitn(transformer, optimizer,
+                                                                        torch.load(args.path_checkpoint_load))
+        # transformer, optimizer, current_epoch, start_batch_idx = load_checkpoitn(transformer,optimizer,
+        #                                                                   torch.load(args.path_checkpoint_load))
     else:
         current_epoch = 0
         start_batch_idx = 0
+        content_loss = 0
+        style_loss = 0
 ##################
     for epoch in range(current_epoch, args.epochs):
         transformer.train()
         agg_content_loss = 0.
         agg_style_loss = 0.
         count = 0
+        loss = 0
         for batch_idx, (x, _) in enumerate(train_loader):
             if epoch == current_epoch and batch_idx < start_batch_idx:
                 n_batch = len(x)
                 count += n_batch
-                # agg_content_loss = content_loss
-                # agg_style_loss = style_loss
+                agg_content_loss = content_loss
+                agg_style_loss = style_loss
                 continue
             n_batch = len(x)
             count += n_batch
@@ -135,6 +139,7 @@ def train(args):
             style_loss *= args.style_weight
 
             total_loss = content_loss + style_loss
+            loss = total_loss
             total_loss.backward()
             optimizer.step()
 
@@ -142,11 +147,12 @@ def train(args):
             agg_style_loss += style_loss.item()
 
             if (batch_idx + 1) % args.log_interval == 0:
-                mesg = "{}\tEpoch {}:\t[{}/{}]\tcontent: {:.6f}\tstyle: {:.6f}\ttotal: {:.6f}".format(
+                mesg = "{}\tEpoch {}:\t[{}/{}]\tcontent: {:.6f}\tstyle: {:.6f}\ttotal: {:.6f} \tloss: {:.6f}".format(
                     time.ctime(), epoch + 1, count, len(train_dataset),
                                   agg_content_loss / (batch_idx + 1),
                                   agg_style_loss / (batch_idx + 1),
-                                  (agg_content_loss + agg_style_loss) / (batch_idx + 1)
+                                  (agg_content_loss + agg_style_loss) / (batch_idx + 1),
+                                    loss
                 )
                 print(mesg)
 
@@ -156,7 +162,7 @@ def train(args):
                 ckpt_model_path = os.path.join(args.checkpoint_model_dir, ckpt_model_filename)
                 checkpoint = {'state_dict': transformer.state_dict(), 'optimizer': optimizer.state_dict(),
                               'current_epoch': epoch, 'start_batch_idx': batch_idx + 1,
-                              'agg_content_loss': agg_content_loss, 'agg_style_loss':agg_style_loss, 'total_loss':(agg_content_loss + agg_style_loss) / (batch_idx + 1)}
+                              'agg_content_loss': agg_content_loss, 'agg_style_loss':agg_style_loss, 'total_loss':loss}
                 save_checkpoint(checkpoint, ckpt_model_path)
                 transformer.to(device).train()
 
