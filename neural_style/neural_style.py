@@ -142,7 +142,7 @@ def train(args):
                 ckpt_model_filename = "ckpt_epoch_" + str(epoch) + "_batch_id_" + str(batch_idx + 1) + ".pth.tar"
                 ckpt_model_path = os.path.join(args.checkpoint_model_dir, ckpt_model_filename)
                 checkpoint = {'state_dict': transformer.state_dict(), 'optimizer': optimizer.state_dict(),
-                              'current_epoch': epoch, 'start_batch_idx': batch_idx + 1}
+                              'current_epoch': epoch, 'start_batch_idx': batch_idx + 1, 'total_loss':(agg_content_loss + agg_style_loss) / (batch_idx + 1)}
                 save_checkpoint(checkpoint, ckpt_model_path)
                 transformer.to(device).train()
 
