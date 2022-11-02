@@ -40,7 +40,9 @@ def load_checkpoitn(model, optimizer, checkpoint):
     optimizer.load_state_dict(checkpoint['optimizer'])
     current_epoch = checkpoint['current_epoch']
     start_batch_idx = checkpoint['start_batch_idx']
-    return model, optimizer, current_epoch, start_batch_idx
+    content_loss= checkpoint['agg_content_loss']
+    style_loss= checkpoint['agg_style_loss']
+    return model, optimizer, current_epoch, start_batch_idx, content_loss, style_loss
 
 def train(args):
     if args.cuda:
@@ -77,7 +79,7 @@ def train(args):
     gram_style = [utils.gram_matrix(y) for y in features_style]
 
     if args.load_model:
-        transformer, optimizer, current_epoch, start_batch_idx = load_checkpoitn(transformer, optimizer,
+        transformer, optimizer, current_epoch, start_batch_idx, content_loss, style_loss = load_checkpoitn(transformer, optimizer,
                                                                         torch.load(args.path_checkpoint_load))
     else:
         current_epoch = 0
@@ -92,6 +94,8 @@ def train(args):
             if epoch == current_epoch and batch_idx < start_batch_idx:
                 n_batch = len(x)
                 count += n_batch
+                agg_content_loss = content_loss
+                agg_style_loss = style_loss
                 continue;
             n_batch = len(x)
             count += n_batch
@@ -142,7 +146,8 @@ def train(args):
                 ckpt_model_filename = "ckpt_epoch_" + str(epoch) + "_batch_id_" + str(batch_idx + 1) + ".pth.tar"
                 ckpt_model_path = os.path.join(args.checkpoint_model_dir, ckpt_model_filename)
                 checkpoint = {'state_dict': transformer.state_dict(), 'optimizer': optimizer.state_dict(),
-                              'current_epoch': epoch, 'start_batch_idx': batch_idx + 1, 'total_loss':(agg_content_loss + agg_style_loss) / (batch_idx + 1)}
+                              'current_epoch': epoch, 'start_batch_idx': batch_idx + 1,
+                              'agg_content_loss': agg_content_loss, 'agg_style_loss':agg_style_loss, 'total_loss':(agg_content_loss + agg_style_loss) / (batch_idx + 1)}
                 save_checkpoint(checkpoint, ckpt_model_path)
                 transformer.to(device).train()
 
